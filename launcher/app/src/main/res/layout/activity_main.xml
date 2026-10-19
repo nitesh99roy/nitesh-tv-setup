@@ -27,6 +27,43 @@
         android:includeFontPadding="false"
         android:singleLine="true" />
 
+    <!-- Animated welcome, right-aligned with the Settings pill; placed vertically in code. -->
+    <LinearLayout
+        android:id="@+id/welcome"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|top"
+        android:layout_marginEnd="56dp"
+        android:orientation="vertical"
+        android:gravity="end"
+        android:alpha="0"
+        android:importantForAccessibility="no">
+
+        <TextView
+            android:id="@+id/welcomeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/welcome_label"
+            android:textColor="#8CFFFFFF"
+            android:textSize="13sp"
+            android:fontFamily="@font/outfit"
+            android:fontVariationSettings="'wght' 500"
+            android:letterSpacing="0.32"
+            android:textAllCaps="true"
+            android:includeFontPadding="false" />
+
+        <com.gathin.tvhome.WelcomeNameView
+            android:id="@+id/welcomeName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <com.gathin.tvhome.AccentLineView
+            android:id="@+id/welcomeAccent"
+            android:layout_width="64dp"
+            android:layout_height="3dp"
+            android:layout_marginTop="14dp" />
+    </LinearLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

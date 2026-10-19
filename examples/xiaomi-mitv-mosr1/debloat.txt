@@ -1,0 +1,81 @@
+# Xiaomi MiTV-MOSR1 (codename hermano), Android TV 11, firmware RTT8.210119.001.1129
+# MediaTek chipset, 1.4 GB RAM. Stock home: com.google.android.tvlauncher showing PatchWall.
+#
+# Apply:   tools\disable.ps1 -TvHost 192.168.0.92 examples\xiaomi-mitv-mosr1\debloat.txt
+# Undo:    tools\restore.ps1 -TvHost 192.168.0.92 examples\xiaomi-mitv-mosr1\debloat.txt
+# Everything is DISABLED for user 0, not uninstalled.
+#
+# Stage 1 and the owner's stage 2 picks are active. Commented stage 2 lines are KEPT by choice.
+#
+# KEPT on purpose (owner's request or needed by the TV), checked with dumpsys:
+#   com.mitv.tvhome.mitvplus     Xiaomi TV+ - owner uses it. Standalone app with its own
+#                                LiveTVInputService; does not depend on PatchWall.
+#   com.mitv.livetv              Live TV app; owns SelectInputActivity (VIEW_INPUTS) = input switcher
+#   com.mitv.livetv.ci_mediatek  CI card service for Live TV
+#   mitv.service                 PERSISTENT core TV server
+#   com.mitv.overseaservice      PERSISTENT; hosts netflixService (Netflix key on the remote)
+#   com.xiaomi.android.tvsetup.partnercustomizer  PERSISTENT; BleRcActivity = remote pairing
+#   com.mi.bluetooth             PERSISTENT remote service (RcService)
+#   com.mediatek.tvinput / tv.service / tv.agent / network   HDMI, tuner, TV services
+#   com.mitv.videoplayer         video player; also hosts the com.mitv.tvhome.datastore providers
+#   com.xiaomi.mitv.mediaexplorer  USB / network media browser
+#   com.google.android.tv.remote.service, inputmethod.latin, vending, gms, gsf, tv.settings
+
+# ======================= STAGE 1: safe, applied first =======================
+
+# ---- Xiaomi + Google telemetry ----
+com.miui.tv.analytics                           # AnalyticsService, DataCollectorService
+com.xiaomi.statistic                            # UploadBroadcastReceiver
+com.google.android.feedback                     # crash / feedback reporting
+
+# ---- Xiaomi ads, promos and content rows ----
+com.mitv.tvhome.atv                             # PatchWall (the ad-filled home you see now)
+com.mitv.tvhome.michannel                       # Mi recommendation channels + Firebase
+com.xm.webcontent                               # Xiaomi promo WebView
+com.xiaomi.floatingframe                        # floating promo overlay service
+android.autoinstalls.config.xiaomi.amelie       # silent partner-app auto-install config
+
+# ---- Xiaomi nagware and dead weight ----
+com.xiaomi.mitv.tvmanager                       # "TV Manager" cleaner / boost
+com.mitv.toolhouse                              # empty system shell, no components
+com.xiaomi.mitv.handbook                        # on-screen user manual
+com.xiaomo.tv.milegal                           # legal notices screens
+com.mstar.android.tv.disclaimercustomization    # vendor disclaimer screen
+fusion.android.tv.demo                          # retail store demo loop
+com.mitv.dream                                  # Mi screensaver (+ memory monitor); Google one stays for now
+
+# ---- Second HOME claimant ----
+com.duokan.factorytest                          # factory test app also answers HOME (priority 0)
+
+# ======================= STAGE 2: owner's choices (commented = kept on purpose) =======================
+
+# ---- Streaming apps ----
+# com.graymatrix.did                            # ZEE5
+# com.sonyliv                                   # SonyLIV (Play Store build)
+com.xiaomitv.sonyliv                            # SonyLIV Xiaomi preload; the Play Store com.sonyliv is kept
+# in.startv.hotstar                             # JioHotstar
+# com.amazon.amazonvideo.livingroom             # Prime Video
+# com.netflix.ninja                             # Netflix
+# com.google.android.youtube.tv                 # YouTube
+com.google.android.youtube.tvkids               # YouTube Kids, not used
+# com.google.android.youtube.tvmusic            # YouTube Music
+# com.google.android.videos                     # Google TV / Play Movies
+# org.videolan.vlc                              # VLC
+# com.google.android.play.games                 # Play Games
+
+# ---- Features ----
+# com.google.android.katniss                    # Google voice search / Assistant (mic button)
+# com.google.android.apps.mediashell            # Chromecast built-in
+# com.xiaomi.mitv.smartshare                    # Mi screen mirroring (Miracast / MiPlay)
+# com.mitv.milinkservice                        # Mi phone link discovery
+# com.xiaomi.wfdsinkhelperservice               # Miracast helper
+# com.mitv.updater                              # firmware (system) updates
+# com.xiaomi.mitv.updateservice                 # Xiaomi app updates + remote app installer
+# com.mitv.gallery                              # Mi Gallery (photos, Mi Cloud)
+# com.xiaomi.mimusic2                           # Mi Music
+# com.mitv.tvlock                               # TV lock / parental password
+
+# ======================= STAGE 3: only AFTER the new launcher owns Home =======================
+# com.google.android.tvlauncher is NOT listed: build-and-install.ps1 disables it after install.
+com.google.android.tvrecommendations            # stock launcher recommendation rows
+com.google.android.backdrop                     # Google screensaver, replaced by the Clock dream

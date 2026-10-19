@@ -7,20 +7,23 @@
 
     <!-- Apps pinned to the dock row at the bottom, in this order. Missing apps are skipped. -->
     <string-array name="dock_apps">
+        <item>com.google.android.youtube.tv</item>
+        <item>com.mitv.tvhome.mitvplus</item>
         <item>com.netflix.ninja</item>
         <item>com.amazon.amazonvideo.livingroom</item>
-        <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
     </string-array>
 
     <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers). -->
     <string-array name="hidden_apps">
-        <item>com.mediatek.wwtv.tvcenter</item>
-        <item>com.mitv.gallery</item>
+        <item>com.mitv.livetv</item>
     </string-array>
 
+    <!-- Animated welcome on the right, under the top buttons. Empty welcome_name hides it. -->
+    <string name="welcome_label" translatable="false">Welcome</string>
+    <string name="welcome_name" translatable="false">Nitesh</string>
+
     <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
-    <string name="live_tv_package" translatable="false">com.mediatek.wwtv.tvcenter</string>
+    <string name="live_tv_package" translatable="false">com.mitv.livetv</string>
 
     <!-- Show the Solar Hijri (Shamsi) date used in Iran and Afghanistan, e.g. "27 Mehr 1405", above the
          Gregorian date. -->

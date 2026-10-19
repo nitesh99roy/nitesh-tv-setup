@@ -67,6 +67,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private GlassView glass;
     private View ambient;
     private TextView heroName;
+    private Welcome welcome;
     private GradientDrawable ambientGlow;
     private int ambientColor;
     private boolean heroShown;
@@ -147,6 +148,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         glass = findViewById(R.id.glass);
         ambient = findViewById(R.id.ambient);
         heroName = findViewById(R.id.heroName);
+        welcome = new Welcome(this, handler, density);
         ambientGlow = new GradientDrawable();
         ambientGlow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambientGlow.setGradientCenter(0.32f, 0.42f);
@@ -267,6 +269,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         glass.setAlpha(0f);
         heroShown = false;
         heroName.setAlpha(0f);
+        welcome.reset();
         ambient.setAlpha(0f);
         // Read these before reload(): rebinding can move focus to the first tile and overwrite them.
         final String returnKey = lastFocusedKey;
@@ -290,6 +293,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     protected void onPause() {
         super.onPause();
         handler.removeCallbacks(minuteTick);
+        welcome.stop();
     }
 
     @Override
@@ -366,6 +370,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int color = adapter.ambientColorAt(position);
         float y = dockTopInRoot - 14 * density - 26 * density - heroName.getHeight();
         boolean changed = !label.contentEquals(heroName.getText());
+        View buttons = findViewById(R.id.topButtons);
+        Rect b = new Rect(0, 0, buttons.getWidth(), buttons.getHeight());
+        root.offsetDescendantRectToMyCoords(buttons, b);
 
         if (!heroShown) {
             heroName.setText(label);
@@ -391,10 +398,12 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         } else {
             heroName.setY(y);
         }
+        welcome.show(b.bottom, dockTopInRoot - 24 * density);
     }
 
     private void setAmbient(int color) {
         ambientColor = color;
+        welcome.setTint(color);
         int c = color & 0x00FFFFFF;
         ambientGlow.setColors(new int[]{0x5C000000 | c, 0x26000000 | c, 0x00000000 | c});
     }
@@ -403,6 +412,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         if (!heroShown) return;
         heroShown = false;
         heroName.animate().alpha(0f).setDuration(160).start();
+        welcome.hide();
         ambient.animate().alpha(0f).setDuration(300).start();
     }
 
