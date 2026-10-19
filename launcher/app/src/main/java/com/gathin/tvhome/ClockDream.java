@@ -7,12 +7,15 @@ import android.os.Handler;
 import android.os.Looper;
 import android.service.dreams.DreamService;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
+import android.widget.LinearLayout;
 
 import java.util.Random;
 
 /**
- * Screensaver: the launcher's thin clock and date on black, over a slow ambient glow.
- * Every minute the clock drifts to a new spot and the glow shifts colour, so nothing burns in.
+ * Screensaver: the welcome name, the launcher's thin clock and date on black, over a slow ambient
+ * glow. Every minute the clock drifts to a new spot, the glow shifts colour and the pen writes the
+ * name again in that colour, so nothing burns in.
  * No network, no images: cheap enough for a 1 GB TV.
  */
 public class ClockDream extends DreamService {
@@ -24,6 +27,8 @@ public class ClockDream extends DreamService {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Random random = new Random();
     private View content;
+    private WelcomeNameView name;
+    private ValueAnimator write;
     private GradientDrawable glow;
     private int colorIndex;
     private int glowColor;
@@ -52,6 +57,17 @@ public class ClockDream extends DreamService {
         ambient.setBackground(glow);
         ambient.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) ->
                 glow.setGradientRadius((r - l) * 0.55f));
+        name = findViewById(R.id.dreamName);
+        if (name.textWidth() <= 0f) {
+            name.setVisibility(View.GONE);
+        } else {
+            // Cancel the view's glow padding so the name lines up with the clock's left edge.
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) name.getLayoutParams();
+            int p = (int) name.pad;
+            lp.setMargins(-p + (int) (4 * getResources().getDisplayMetrics().density), -p, 0, -p);
+            name.setLayoutParams(lp);
+            name.setIntro(0f, 0f, 0f);
+        }
         colorIndex = random.nextInt(PALETTE.length);
         setGlow(PALETTE[colorIndex]);
     }
@@ -63,6 +79,7 @@ public class ClockDream extends DreamService {
         content.post(() -> {
             placeClock();
             content.animate().alpha(1f).setDuration(1200).start();
+            writeName(600);
         });
         handler.postDelayed(tick, MOVE_MS);
     }
@@ -70,6 +87,7 @@ public class ClockDream extends DreamService {
     @Override
     public void onDreamingStopped() {
         handler.removeCallbacks(tick);
+        if (write != null) write.cancel();
         super.onDreamingStopped();
     }
 
@@ -82,8 +100,24 @@ public class ClockDream extends DreamService {
     private void moveClock() {
         content.animate().alpha(0f).setDuration(900).withEndAction(() -> {
             placeClock();
+            name.setIntro(0f, 0f, 0f);
             content.animate().alpha(1f).setDuration(1200).start();
+            writeName(500);
         }).start();
+    }
+
+    /** The pen writes the name in the current glow colour. */
+    private void writeName(long delay) {
+        if (name.getVisibility() != View.VISIBLE) return;
+        if (write != null) write.cancel();
+        name.setTint(PALETTE[colorIndex]);
+        name.setIntro(0f, 0f, 1f);
+        write = ValueAnimator.ofFloat(0f, 1f);
+        write.setStartDelay(Welcome.ms(delay));
+        write.setDuration(Welcome.ms(2800));
+        write.setInterpolator(new LinearInterpolator());
+        write.addUpdateListener(a -> name.setWrite((float) a.getAnimatedValue()));
+        write.start();
     }
 
     /** A random spot that keeps the whole clock on screen, with the glow centred behind it. */

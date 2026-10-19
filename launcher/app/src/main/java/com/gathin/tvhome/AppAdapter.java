@@ -30,8 +30,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,6 +55,8 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
         final String pkg;
         final Drawable banner;
         final Drawable icon;
+        /** The app's install path; it changes whenever the app is updated, which invalidates the cache. */
+        String version = "";
         int ambient;
 
         Entry(String label, ComponentName component, Drawable banner, Drawable icon) {
@@ -74,6 +78,8 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
     /** Never shown as tiles (res/values/config.xml, hidden_apps). */
     private final Set<String> hidden;
     private final List<Entry> items = new ArrayList<>();
+    /** Loaded tiles by component, reused across reload() so coming Home doesn't decode every banner again. */
+    private final Map<String, Entry> cache = new HashMap<>();
 
     AppAdapter(Context ctx, TileListener listener, int dockSize) {
         this.ctx = ctx;
@@ -95,11 +101,19 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
             if (ri.activityInfo == null) continue;
             String pkg = ri.activityInfo.packageName;
             if (pkg.equals(ctx.getPackageName()) || hidden.contains(pkg)) continue;
-            Drawable banner = ri.activityInfo.loadBanner(pm);
-            if (banner == null) banner = ri.activityInfo.applicationInfo.loadBanner(pm);
-            Drawable icon = ri.loadIcon(pm);
-            String label = String.valueOf(ri.loadLabel(pm));
-            fresh.add(new Entry(label, new ComponentName(pkg, ri.activityInfo.name), banner, icon));
+            String key = pkg + "/" + ri.activityInfo.name;
+            String version = String.valueOf(ri.activityInfo.applicationInfo.sourceDir);
+            Entry e = cache.get(key);
+            if (e == null || !version.equals(e.version)) {
+                Drawable banner = ri.activityInfo.loadBanner(pm);
+                if (banner == null) banner = ri.activityInfo.applicationInfo.loadBanner(pm);
+                Drawable icon = ri.loadIcon(pm);
+                String label = String.valueOf(ri.loadLabel(pm));
+                e = new Entry(label, new ComponentName(pkg, ri.activityInfo.name), banner, icon);
+                e.version = version;
+                cache.put(key, e);
+            }
+            fresh.add(e);
         }
         Collections.sort(fresh, (a, b) -> {
             int fa = favourites.indexOf(a.pkg), fb = favourites.indexOf(b.pkg);
@@ -116,6 +130,13 @@ public class AppAdapter extends RecyclerView.Adapter<AppAdapter.Holder> {
             fresh.add(new Entry(ctx.getString(R.string.home_settings),
                     new ComponentName(ctx, HomeSettingsActivity.class), null,
                     ctx.getDrawable(R.drawable.ic_home_settings)));
+        }
+        // Nothing installed, removed or updated since last time: keep the tiles exactly as they are.
+        if (fresh.size() == items.size()) {
+            boolean same = true;
+            for (int i = 0; i < fresh.size() && same; i++) same = fresh.get(i) == items.get(i)
+                    || (fresh.get(i).component.equals(items.get(i).component) && fresh.get(i).banner == items.get(i).banner);
+            if (same) return;
         }
         items.clear();
         items.addAll(fresh);

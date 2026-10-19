@@ -111,6 +111,26 @@ public class WelcomeNameView extends View {
         invalidate();
     }
 
+    private static final android.view.animation.PathInterpolator PEN =
+            new android.view.animation.PathInterpolator(0.45f, 0.05f, 0.35f, 1f);
+    private static final android.view.animation.DecelerateInterpolator SOFT =
+            new android.view.animation.DecelerateInterpolator(1.6f);
+
+    /**
+     * One knob for the whole handwriting effect, t from 0 to 1: the pen traces the outline over the
+     * first 70%, the letters fill in from 52% and the pen line fades out over the last 28%.
+     */
+    void setWrite(float t) {
+        float trace = PEN.getInterpolation(clamp(t / 0.7f));
+        float fillIn = SOFT.getInterpolation(clamp((t - 0.52f) / 0.38f));
+        float line = 1f - SOFT.getInterpolation(clamp((t - 0.72f) / 0.28f));
+        setIntro(trace, fillIn, line);
+    }
+
+    private static float clamp(float v) {
+        return v < 0f ? 0f : (v > 1f ? 1f : v);
+    }
+
     void setShine(float s) {
         shine = s;
         invalidate();

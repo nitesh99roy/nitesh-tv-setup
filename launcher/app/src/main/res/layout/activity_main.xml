@@ -62,6 +62,48 @@
             android:layout_width="64dp"
             android:layout_height="3dp"
             android:layout_marginTop="14dp" />
+
+        <!-- Current weather; hidden until the first reading arrives. -->
+        <LinearLayout
+            android:id="@+id/welcomeWeather"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:visibility="gone">
+
+            <com.gathin.tvhome.WeatherIconView
+                android:id="@+id/weatherIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp" />
+
+            <TextView
+                android:id="@+id/weatherTemp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="9dp"
+                android:textColor="#F2FFFFFF"
+                android:textSize="20sp"
+                android:fontFamily="@font/outfit"
+                android:fontVariationSettings="'wght' 350"
+                android:includeFontPadding="false" />
+
+            <TextView
+                android:id="@+id/weatherText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:maxWidth="260dp"
+                android:singleLine="true"
+                android:ellipsize="end"
+                android:textColor="#A6FFFFFF"
+                android:textSize="14sp"
+                android:fontFamily="@font/outfit"
+                android:fontVariationSettings="'wght' 400"
+                android:letterSpacing="0.04"
+                android:includeFontPadding="false" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -211,6 +253,16 @@
                     android:nextFocusDown="@+id/grid" />
 
                 <TextView
+                    android:id="@+id/btnSleep"
+                    style="@style/TopButton"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:drawablePadding="0dp"
+                    android:contentDescription="@string/sleep"
+                    android:drawableStart="@drawable/ic_sleep"
+                    android:nextFocusDown="@+id/grid" />
+
+                <TextView
                     android:id="@+id/btnSettings"
                     style="@style/TopButton"
                     android:text="@string/settings"
@@ -239,6 +291,21 @@
                 android:descendantFocusability="afterDescendants" />
         </FrameLayout>
     </LinearLayout>
+
+    <!-- Minutes left on the sleep timer, under the moon pill; placed in code. -->
+    <TextView
+        android:id="@+id/sleepBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:textColor="#B3FFFFFF"
+        android:textSize="11sp"
+        android:fontFamily="@font/outfit"
+        android:fontVariationSettings="'wght' 500"
+        android:letterSpacing="0.16"
+        android:textAllCaps="true"
+        android:includeFontPadding="false"
+        android:importantForAccessibility="no" />
 
     <!-- The single floating glass highlight that springs between tiles. -->
     <com.gathin.tvhome.GlassView

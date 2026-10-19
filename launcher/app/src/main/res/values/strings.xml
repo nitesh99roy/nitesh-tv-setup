@@ -26,4 +26,15 @@
     <string name="input_key_service_description">Opens the input switcher when the remote\'s Input button is pressed.</string>
     <string name="home_key_name">Home button</string>
     <string name="home_key_description">Makes the remote\'s Home button open this launcher.</string>
+    <string name="sleep">Sleep</string>
+    <string name="sleep_left">%1$d min</string>
+    <string name="sleep_off">Turn off timer</string>
+    <string name="sleep_minutes">%1$d minutes</string>
+    <string name="sleep_hours">%1$d hours</string>
+    <string name="sleep_active">%1$d min left</string>
+    <string name="sleep_set">The TV will sleep in %1$d minutes</string>
+    <string name="sleep_cancelled">Sleep timer off</string>
+    <string name="sleep_warning">The TV will sleep in 1 minute</string>
+    <string name="sleep_unavailable">Sleep needs the launcher\'s sleep service. Install with SLEEP_SERVICE=1.</string>
+    <string name="sleep_service_description">Lets the home screen\'s Sleep timer put the TV in standby.</string>
 </resources>

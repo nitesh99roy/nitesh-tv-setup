@@ -68,6 +68,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private View ambient;
     private TextView heroName;
     private Welcome welcome;
+    private Weather weather;
+    private TextView btnSleep;
     private GradientDrawable ambientGlow;
     private int ambientColor;
     private boolean heroShown;
@@ -132,6 +134,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         public void run() {
             updateGreeting();
             updateWifiLabel();
+            updateSleepLabel();
+            weather.refresh();
             handler.postDelayed(this, MINUTE_MS);
         }
     };
@@ -149,6 +153,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         ambient = findViewById(R.id.ambient);
         heroName = findViewById(R.id.heroName);
         welcome = new Welcome(this, handler, density);
+        weather = new Weather(this, r -> welcome.setWeather(r));
         ambientGlow = new GradientDrawable();
         ambientGlow.setGradientType(GradientDrawable.RADIAL_GRADIENT);
         ambientGlow.setGradientCenter(0.32f, 0.42f);
@@ -227,6 +232,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             return true;
         });
         btnSettings.setOnClickListener(v -> open(new Intent(Settings.ACTION_SETTINGS)));
+        btnSleep = findViewById(R.id.btnSleep);
+        btnSleep.setOnClickListener(v -> showSleepMenu());
 
         // Keep focus on the top bar at its ends and at the top: Android's focus finder would otherwise
         // jump to a tile far below when there is nothing in that direction.
@@ -243,6 +250,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         btnInputs.setOnKeyListener(pillKeys);
         btnWifi.setOnKeyListener(pillKeys);
         btnSettings.setOnKeyListener(pillKeys);
+        btnSleep.setOnKeyListener(pillKeys);
 
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
@@ -279,6 +287,8 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         updateGreeting();
         updateWifiLabel();
         updateInputsButton();
+        updateSleepLabel();
+        weather.refresh();
         handler.postDelayed(minuteTick, MINUTE_MS);
 
         // Return to the app we left from, or the same slot if that app is gone. Always refocus: after
@@ -649,6 +659,102 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         panel.animate().alpha(1f).scaleY(1f).translationY(0f).setDuration(220)
                 .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();
         rows.getChildAt(0).requestFocus();
+    }
+
+    // ---- sleep timer -----------------------------------------------------------------------------
+
+    /**
+     * The moon pill stays round so the date keeps its room; while a timer runs the minutes left sit
+     * in a small caption just under it.
+     */
+    private void updateSleepLabel() {
+        int left = SleepTimer.minutesLeft(this);
+        TextView badge = findViewById(R.id.sleepBadge);
+        btnSleep.setText("");
+        btnSleep.setCompoundDrawablePadding(0);
+        int p = (int) (10 * density);
+        btnSleep.setPaddingRelative(p, 0, p, 0);
+        if (left <= 0) {
+            btnSleep.setContentDescription(getString(R.string.sleep));
+            badge.setVisibility(View.GONE);
+            return;
+        }
+        String text = getString(R.string.sleep_left, left);
+        btnSleep.setContentDescription(getString(R.string.sleep) + ", " + text);
+        badge.setText(text);
+        badge.setVisibility(View.VISIBLE);
+        badge.post(() -> {
+            Rect r = new Rect(0, 0, btnSleep.getWidth(), btnSleep.getHeight());
+            root.offsetDescendantRectToMyCoords(btnSleep, r);
+            badge.setX(r.exactCenterX() - badge.getWidth() / 2f);
+            badge.setY(r.bottom + 8 * density);
+        });
+    }
+
+    private void showSleepMenu() {
+        View anchor = btnSleep;
+        View panel = getLayoutInflater().inflate(R.layout.popup_inputs, root, false);
+        LinearLayout rows = panel.findViewById(R.id.rows);
+        int width = Math.max(anchor.getWidth(), (int) (170 * density));
+        final PopupWindow popup = new PopupWindow(panel, width, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+        popup.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));   // needed for Back to dismiss
+        popup.setOutsideTouchable(true);
+        popup.setAnimationStyle(0);
+        popup.setElevation(0f);
+
+        int left = SleepTimer.minutesLeft(this);
+        if (left > 0) {
+            addSleepRow(rows, popup, getString(R.string.sleep_off), getString(R.string.sleep_active, left), () -> {
+                SleepTimer.cancel(this);
+                Toast.makeText(this, R.string.sleep_cancelled, Toast.LENGTH_SHORT).show();
+                updateSleepLabel();
+            });
+            addSeparator(rows);
+        }
+        for (int minutes : new int[]{15, 30, 60, 90, 120}) {
+            String title = minutes < 120 ? getString(R.string.sleep_minutes, minutes)
+                    : getString(R.string.sleep_hours, minutes / 60);
+            addSleepRow(rows, popup, title, null, () -> {
+                if (!SleepTimer.ready()) {
+                    Toast.makeText(this, R.string.sleep_unavailable, Toast.LENGTH_LONG).show();
+                    return;
+                }
+                SleepTimer.start(this, minutes * 60_000L);
+                Toast.makeText(this, getString(R.string.sleep_set, minutes), Toast.LENGTH_SHORT).show();
+                updateSleepLabel();
+            });
+        }
+
+        panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
+        popup.setWidth(Math.max(width, panel.getMeasuredWidth()));
+        panel.setAlpha(0f);
+        panel.setPivotY(0f);
+        panel.setScaleY(0.92f);
+        panel.setTranslationY(-8 * density);
+        popup.showAsDropDown(anchor, 0, (int) (10 * density), Gravity.START);
+        panel.animate().alpha(1f).scaleY(1f).translationY(0f).setDuration(220)
+                .setInterpolator(new android.view.animation.DecelerateInterpolator(1.6f)).start();
+        rows.getChildAt(0).requestFocus();
+    }
+
+    private void addSleepRow(LinearLayout rows, PopupWindow popup, String title, String status, Runnable action) {
+        View row = getLayoutInflater().inflate(R.layout.item_input, rows, false);
+        ((ImageView) row.findViewById(R.id.icon)).setImageResource(R.drawable.ic_sleep);
+        ((TextView) row.findViewById(R.id.title)).setText(title);
+        TextView statusView = row.findViewById(R.id.status);
+        View dot = row.findViewById(R.id.dot);
+        if (status != null) {
+            statusView.setText(status);
+            dot.setVisibility(View.VISIBLE);
+        } else {
+            statusView.setVisibility(View.GONE);
+            dot.setVisibility(View.GONE);
+        }
+        row.setOnClickListener(v -> {
+            popup.dismiss();
+            action.run();
+        });
+        rows.addView(row);
     }
 
     private void addSeparator(LinearLayout rows) {

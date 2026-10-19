@@ -16,6 +16,12 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- The welcome name, rewritten by the pen each time the clock moves. -->
+        <com.gathin.tvhome.WelcomeNameView
+            android:id="@+id/dreamName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

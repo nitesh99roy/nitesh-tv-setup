@@ -31,6 +31,10 @@ final class Welcome {
     private final TextView label;
     private final WelcomeNameView name;
     private final AccentLineView accent;
+    private final View weatherRow;
+    private final WeatherIconView weatherIcon;
+    private final TextView weatherTemp;
+    private final TextView weatherText;
     private final Handler handler;
     private final float density;
     private final boolean enabled;
@@ -56,6 +60,10 @@ final class Welcome {
         label = a.findViewById(R.id.welcomeLabel);
         name = a.findViewById(R.id.welcomeName);
         accent = a.findViewById(R.id.welcomeAccent);
+        weatherRow = a.findViewById(R.id.welcomeWeather);
+        weatherIcon = a.findViewById(R.id.weatherIcon);
+        weatherTemp = a.findViewById(R.id.weatherTemp);
+        weatherText = a.findViewById(R.id.weatherText);
         enabled = name.textWidth() > 0f;
         if (!enabled) {
             block.setVisibility(View.GONE);
@@ -138,6 +146,23 @@ final class Welcome {
         tintAnim.start();
     }
 
+    /** Fill in the weather row; it stays hidden until there is a reading. */
+    void setWeather(Weather.Result r) {
+        if (!enabled || r == null) return;
+        weatherIcon.set(WeatherIconView.kindFor(r.code), r.day);
+        weatherTemp.setText(r.temp + "°");
+        String text = r.describe();
+        if (r.place != null && !r.place.isEmpty()) text += "  ·  " + r.place;
+        weatherText.setText(text);
+        if (weatherRow.getVisibility() != View.VISIBLE) {
+            weatherRow.setVisibility(View.VISIBLE);
+            if (shown && intro == null) {
+                weatherRow.setAlpha(0f);
+                weatherRow.animate().alpha(1f).setDuration(ms(500)).start();
+            }
+        }
+    }
+
     // ---- choreography ----------------------------------------------------------------------------
 
     private void playIntro() {
@@ -150,6 +175,7 @@ final class Welcome {
         name.setShine(-1f);
         accent.setGrow(0f);
         accent.setSpark(-1f);
+        weatherRow.setAlpha(0f);
 
         // WELCOME: letters drift together from wide tracking while fading in.
         ValueAnimator labelIn = ValueAnimator.ofFloat(0f, 1f);
@@ -166,15 +192,7 @@ final class Welcome {
         write.setStartDelay(ms(250));
         write.setDuration(ms(2300));
         write.setInterpolator(new LinearInterpolator());
-        PathInterpolator penCurve = new PathInterpolator(0.45f, 0.05f, 0.35f, 1f);
-        DecelerateInterpolator soft = new DecelerateInterpolator(1.6f);
-        write.addUpdateListener(an -> {
-            float t = (float) an.getAnimatedValue();
-            float trace = penCurve.getInterpolation(clamp(t / 0.7f));
-            float fill = soft.getInterpolation(clamp((t - 0.52f) / 0.38f));
-            float line = 1f - soft.getInterpolation(clamp((t - 0.72f) / 0.28f));
-            name.setIntro(trace, fill, line);
-        });
+        write.addUpdateListener(an -> name.setWrite((float) an.getAnimatedValue()));
 
         // Accent line grows from the right, then a spark runs along it.
         ValueAnimator grow = ValueAnimator.ofFloat(0f, 1f);
@@ -183,8 +201,20 @@ final class Welcome {
         grow.setInterpolator(new DecelerateInterpolator(2.5f));
         grow.addUpdateListener(an -> accent.setGrow((float) an.getAnimatedValue()));
 
+        // Weather rises in last, once the name has settled.
+        float lift = 8f * density;
+        ValueAnimator weatherIn = ValueAnimator.ofFloat(0f, 1f);
+        weatherIn.setStartDelay(ms(2500));
+        weatherIn.setDuration(ms(650));
+        weatherIn.setInterpolator(new DecelerateInterpolator(2f));
+        weatherIn.addUpdateListener(an -> {
+            float t = (float) an.getAnimatedValue();
+            weatherRow.setAlpha(t);
+            weatherRow.setTranslationY(lift * (1f - t));
+        });
+
         AnimatorSet set = new AnimatorSet();
-        set.playTogether(labelIn, write, grow, sparkAnim(2350));
+        set.playTogether(labelIn, write, grow, sparkAnim(2350), weatherIn);
         set.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -194,6 +224,8 @@ final class Welcome {
                 name.setIntro(1f, 1f, 0f);
                 accent.setGrow(1f);
                 accent.setSpark(-1f);
+                weatherRow.setAlpha(1f);
+                weatherRow.setTranslationY(0f);
                 if (intro == animation) intro = null;
             }
         });
@@ -236,7 +268,7 @@ final class Welcome {
      * would rush the handwriting; divide it back out so the intro keeps its pace. With animations
      * switched off (scale 0) everything still ends at once, which is what that setting asks for.
      */
-    private static long ms(long real) {
+    static long ms(long real) {
         float scale = ValueAnimator.getDurationScale();
         return scale > 0f ? (long) (real / scale) : real;
     }
