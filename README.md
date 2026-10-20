@@ -1,3 +1,7 @@
+> **Nitesh's private setup.** To repeat the Xiaomi MiTV-MOSR1 setup on another TV, start with
+> [`SETUP-NITESH-TV.md`](SETUP-NITESH-TV.md). Ready-made apps are in [`apps/`](apps/), JTV Preview changes in
+> [`jtv/`](jtv/). The rest of this README is the upstream tv-vibehack project.
+
 # tv-vibehack
 
 **Your TV, minus the ads.**

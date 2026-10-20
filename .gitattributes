@@ -1,0 +1,4 @@
+
+# JTV patch carries a binary font; never convert its line endings
+jtv/*.patch -text
+*.apk binary
